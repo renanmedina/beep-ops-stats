@@ -46,7 +46,13 @@ var scenariosFactories = map[string]func(faker *faker.Faker) EventDrivenScenario
 				},
 			},
 			MetricsRegister: func(collectableMetrics *metrification.CollectableMetrics, scenario *EventDrivenScenario) {
-				collectableMetrics.DisplacementDurationSeconds.Set(scenario.GetElapsedTime().Seconds())
+				labels := scenario.GetLabels()
+				collectableMetrics.DisplacementDurationSeconds.WithLabelValues(
+					scenario.GetLabels()["appointment_id"],
+					labels["order_ticket"],
+					labels["nurse_name"],
+					labels["operation_hub_name"],
+				).Set(float64(scenario.GetElapsedTime().Seconds()))
 			},
 		}
 	},
@@ -86,7 +92,13 @@ var scenariosFactories = map[string]func(faker *faker.Faker) EventDrivenScenario
 				},
 			},
 			MetricsRegister: func(collectableMetrics *metrification.CollectableMetrics, scenario *EventDrivenScenario) {
-				collectableMetrics.AttendanceDurationSeconds.Set(float64(scenario.GetElapsedTime().Seconds()))
+				labels := scenario.GetLabels()
+				collectableMetrics.AttendanceDurationSeconds.WithLabelValues(
+					scenario.GetLabels()["appointment_id"],
+					labels["order_ticket"],
+					labels["nurse_name"],
+					labels["operation_hub_name"],
+				).Set(float64(scenario.GetElapsedTime().Seconds()))
 			},
 		}
 	},
