@@ -7,15 +7,16 @@ exibição em torre de monitoramento
 
 - Golang v1.23.0 (use gvm)
 
-#### Running the application (DEV)
-
-Running the code directly:
-```bash
-go run ./cmd/main.go 
-```
+#### Running the application
 
 ```bash
 make run
+```
+
+OR Running the code directly from source with go run:
+
+```bash
+go run ./cmd/main.go 
 ```
 
 this should run some events scenarios and spin up the /metrics endpoint.
