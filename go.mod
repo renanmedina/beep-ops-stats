@@ -1,10 +1,13 @@
 module github.com/renanmedina/beep-ops-stats
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.7
 
-require github.com/prometheus/client_golang v1.23.2
+require (
+	github.com/jaswdr/faker/v2 v2.8.1
+	github.com/prometheus/client_golang v1.23.2
+)
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect

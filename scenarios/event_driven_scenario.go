@@ -4,18 +4,19 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/renanmedina/beep-ops-stats/metrification"
 )
 
 type EventDrivenScenario struct {
-	MetricName     string
-	Steps          []EventStep
-	elapsedTime    time.Duration
-	MetricRegister func(prometheusRegistry *prometheus.Registry, scenario *EventDrivenScenario)
+	Name            string
+	Steps           []EventStep
+	elapsedTime     time.Duration
+	MetricsRegister func(collectableMetrics *metrification.CollectableMetrics, scenario *EventDrivenScenario)
 }
 
-func (e *EventDrivenScenario) RegisterMetric(prometheusRegistry *prometheus.Registry) {
-	if e.MetricRegister != nil {
-		e.MetricRegister(prometheusRegistry, e)
+func (e *EventDrivenScenario) RegisterMetrics(collectableMetrics *metrification.CollectableMetrics) {
+	if e.MetricsRegister != nil {
+		e.MetricsRegister(collectableMetrics, e)
 	}
 }
 

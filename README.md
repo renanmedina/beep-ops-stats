@@ -6,6 +6,7 @@ exibição em torre de monitoramento
 #### DEPENDENCIES
 
 - Golang v1.23.0 (use gvm)
+- Faker library (https://github.com/jaswdr/faker)
 
 #### Running the application
 
