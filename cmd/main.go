@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/renanmedina/beep-ops-stats/events"
+	"github.com/renanmedina/beep-ops-stats/scenarios"
 )
 
 func main() {
@@ -20,46 +21,14 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-type EventPublishingStep struct {
-	EventToSend         events.Event
-	DelayToNextDuration time.Duration
-}
-
-type EventsDrivenScenario struct {
-	MetricName     string
-	steps          []EventPublishingStep
-	elapsedTime    time.Duration
-	metricRegister func(prometheusRegistry *prometheus.Registry, scenario *EventsDrivenScenario)
-}
-
-func (e *EventsDrivenScenario) registerMetric(prometheusRegistry *prometheus.Registry) {
-	if e.metricRegister != nil {
-		e.metricRegister(prometheusRegistry, e)
-	}
-}
-
-func (e *EventsDrivenScenario) addElapsedTime(duration time.Duration) {
-	e.elapsedTime += duration
-}
-
-func (e *EventsDrivenScenario) GetLabels() prometheus.Labels {
-	labels := map[string]string{}
-	for _, step := range e.steps {
-		for key, value := range step.EventToSend.GetData() {
-			labels[key] = value.(string)
-		}
-	}
-	return labels
-}
-
 func generateEvents(prometheusRegistry *prometheus.Registry) {
-	scenarios := []EventsDrivenScenario{
+	scenarios := []scenarios.EventDrivenScenario{
 		{
 			// Displacement duration metric
 			MetricName: "displacement_duration_seconds",
-			steps: []EventPublishingStep{
+			Steps: []scenarios.EventStep{
 				{
-					EventToSend: events.AppointmentJourneyEvent{
+					EventReceived: events.AppointmentJourneyEvent{
 						JourneyStepName:  "displacement_started",
 						AppointmentId:    "1",
 						OrderTicket:      "1",
@@ -70,7 +39,7 @@ func generateEvents(prometheusRegistry *prometheus.Registry) {
 					DelayToNextDuration: 15 * time.Second,
 				},
 				{
-					EventToSend: events.AppointmentJourneyEvent{
+					EventReceived: events.AppointmentJourneyEvent{
 						JourneyStepName:  "arrived_in_place",
 						AppointmentId:    "1",
 						OrderTicket:      "1",
@@ -81,7 +50,7 @@ func generateEvents(prometheusRegistry *prometheus.Registry) {
 					DelayToNextDuration: 2 * time.Second,
 				},
 			},
-			metricRegister: func(prometheusRegistry *prometheus.Registry, scenario *EventsDrivenScenario) {
+			MetricRegister: func(prometheusRegistry *prometheus.Registry, scenario *scenarios.EventDrivenScenario) {
 				prometheusRegistry.MustRegister(
 					prometheus.NewGaugeFunc(
 						prometheus.GaugeOpts{
@@ -90,7 +59,7 @@ func generateEvents(prometheusRegistry *prometheus.Registry) {
 							ConstLabels: scenario.GetLabels(),
 						},
 						func() float64 {
-							return float64(scenario.elapsedTime.Seconds())
+							return float64(scenario.GetElapsedTime().Seconds())
 						},
 					),
 				)
@@ -99,9 +68,9 @@ func generateEvents(prometheusRegistry *prometheus.Registry) {
 		{
 			// Attendance duration metric
 			MetricName: "attendance_duration_seconds",
-			steps: []EventPublishingStep{
+			Steps: []scenarios.EventStep{
 				{
-					EventToSend: events.AppointmentJourneyEvent{
+					EventReceived: events.AppointmentJourneyEvent{
 						JourneyStepName:  "attendance_started",
 						AppointmentId:    "1",
 						OrderTicket:      "1",
@@ -112,7 +81,7 @@ func generateEvents(prometheusRegistry *prometheus.Registry) {
 					DelayToNextDuration: 10 * time.Second,
 				},
 				{
-					EventToSend: events.AppointmentJourneyEvent{
+					EventReceived: events.AppointmentJourneyEvent{
 						JourneyStepName:  "attendance_finished",
 						AppointmentId:    "1",
 						OrderTicket:      "1",
@@ -123,7 +92,7 @@ func generateEvents(prometheusRegistry *prometheus.Registry) {
 					DelayToNextDuration: 0,
 				},
 			},
-			metricRegister: func(prometheusRegistry *prometheus.Registry, scenario *EventsDrivenScenario) {
+			MetricRegister: func(prometheusRegistry *prometheus.Registry, scenario *scenarios.EventDrivenScenario) {
 				prometheusRegistry.MustRegister(
 					prometheus.NewGaugeFunc(
 						prometheus.GaugeOpts{
@@ -132,7 +101,7 @@ func generateEvents(prometheusRegistry *prometheus.Registry) {
 							ConstLabels: scenario.GetLabels(),
 						},
 						func() float64 {
-							return float64(scenario.elapsedTime.Seconds())
+							return float64(scenario.GetElapsedTime().Seconds())
 						},
 					),
 				)
@@ -141,14 +110,14 @@ func generateEvents(prometheusRegistry *prometheus.Registry) {
 	}
 
 	for _, scenario := range scenarios {
-		for _, step := range scenario.steps {
+		for _, step := range scenario.Steps {
 			fmt.Println("--------------------------------")
 			fmt.Println(fmt.Sprintf("Scenario: %s", scenario.MetricName))
-			fmt.Println(fmt.Sprintf("Sending event: %s - %s until next step event", step.EventToSend.GetName(), step.DelayToNextDuration.String()))
-			scenario.addElapsedTime(step.DelayToNextDuration)
+			fmt.Println(fmt.Sprintf("Sending event: %s - %s until next step event", step.EventReceived.GetName(), step.DelayToNextDuration.String()))
+			scenario.AddElapsedTime(step.DelayToNextDuration)
 			time.Sleep(step.DelayToNextDuration)
 		}
-		fmt.Println(fmt.Sprintf("Scenario %s elapsed time: %s", scenario.MetricName, scenario.elapsedTime.String()))
-		scenario.registerMetric(prometheusRegistry)
+		fmt.Println(fmt.Sprintf("Scenario %s elapsed time: %s", scenario.MetricName, scenario.GetElapsedTime().String()))
+		scenario.RegisterMetric(prometheusRegistry)
 	}
 }
